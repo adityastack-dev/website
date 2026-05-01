@@ -1,0 +1,441 @@
+import { motion, useScroll, useTransform, useMotionValue, useSpring } from 'motion/react';
+import { Skull, Droplets, MapPin, Clock, CircleAlert, Eye as EyeIcon, Ghost, Sparkles } from 'lucide-react';
+import { useEffect, useState, useMemo } from 'react';
+import ReservationForm from './components/ReservationForm';
+
+// --- Scary Animated Components ---
+
+const SpectralWisp = ({ color = "rgba(200, 200, 255, 0.1)", size = 150, delay = 0, duration = 20 }) => {
+  const [position, setPosition] = useState({ x: Math.random() * 80 + 10, y: Math.random() * 80 + 10 });
+  
+  useEffect(() => {
+    // Occasionally re-randomize starting position slightly
+    const interval = setInterval(() => {
+       setPosition({ x: Math.random() * 80 + 10, y: Math.random() * 80 + 10 });
+    }, duration * 1000);
+    return () => clearInterval(interval);
+  }, [duration]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ 
+        x: [0, 100, -100, 50, -50, 0],
+        y: [0, -50, 50, -100, 100, 0],
+        opacity: [0, 0.2, 0.1, 0.3, 0.1, 0],
+        scale: [1, 1.2, 0.8, 1.1, 0.9, 1]
+      }}
+      transition={{ 
+        duration, 
+        repeat: Infinity, 
+        ease: "easeInOut",
+        delay
+      }}
+      className="fixed pointer-events-none blur-[40px] rounded-full z-[5]"
+      style={{
+        backgroundColor: color,
+        width: size,
+        height: size,
+        left: `${position.x}%`,
+        top: `${position.y}%`,
+      }}
+    />
+  );
+};
+
+const GhostlyApparition = ({ delay = 10 }) => {
+  const [pos, setPos] = useState({ x: 20, y: 30 });
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPos({ x: Math.random() * 70 + 15, y: Math.random() * 60 + 20 });
+    }, 20000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ 
+        opacity: [0, 0, 0.05, 0.08, 0.03, 0],
+        y: [20, 0, -20, 0, 20],
+        x: [0, 5, -5, 2, 0]
+      }}
+      transition={{ 
+        duration: 20, 
+        repeat: Infinity, 
+        delay,
+        times: [0, 0.2, 0.3, 0.5, 0.8, 1]
+      }}
+      className="fixed z-[4] pointer-events-none filter grayscale opacity-20"
+      style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
+    >
+      <Ghost size={200} className="text-zinc-200 blur-[6px]" strokeWidth={1} />
+    </motion.div>
+  );
+};
+
+const GhostlyGlitch = ({ text }: { text: string }) => {
+  return (
+    <span className="relative inline-block group">
+       <span className="relative z-10">{text}</span>
+       <motion.span 
+         className="absolute top-0 left-0 -z-10 text-red-600 opacity-0 group-hover:opacity-100 blur-[2px]"
+         animate={{ 
+           x: [0, -2, 2, -2, 0],
+           opacity: [0, 0.3, 0.1, 0.4, 0]
+         }}
+         transition={{ 
+           duration: 0.2, 
+           repeat: Infinity,
+           repeatType: "mirror"
+         }}
+       >
+         {text}
+       </motion.span>
+    </span>
+  );
+};
+
+const GhostlyWhisper = () => {
+  const whispers = useMemo(() => [
+    "They're coming...",
+    "Don't look back.",
+    "Did you hear that?",
+    "It's too late now.",
+    "Someone is watching.",
+    "The ground remembers.",
+    "Breathless...",
+    "Join us."
+  ], []);
+
+  const [currentWhisper, setCurrentWhisper] = useState(whispers[0]);
+  const [opacity, setOpacity] = useState(0);
+
+  useEffect(() => {
+    const showWhisper = () => {
+      setCurrentWhisper(whispers[Math.floor(Math.random() * whispers.length)]);
+      setOpacity(0.2);
+      setTimeout(() => setOpacity(0), 3000);
+    };
+
+    const interval = setInterval(() => {
+      if (Math.random() > 0.7) showWhisper();
+    }, 8000);
+
+    return () => clearInterval(interval);
+  }, [whispers]);
+
+  return (
+    <motion.div 
+      animate={{ opacity }}
+      className="fixed bottom-10 left-10 pointer-events-none z-[100] font-serif italic text-lg text-zinc-300 blur-[1px] select-none"
+    >
+      {currentWhisper}
+    </motion.div>
+  );
+};
+
+const CustomCursor = ({ mouseX, mouseY }: { mouseX: any, mouseY: any }) => {
+  const smoothX = useSpring(mouseX, { stiffness: 300, damping: 20, mass: 0.5 });
+  const smoothY = useSpring(mouseY, { stiffness: 300, damping: 20, mass: 0.5 });
+  const lagX = useSpring(mouseX, { stiffness: 100, damping: 40, mass: 2 });
+  const lagY = useSpring(mouseY, { stiffness: 100, damping: 40, mass: 2 });
+
+  return (
+    <>
+      <motion.div
+        className="fixed top-0 left-0 w-3 h-3 bg-red-600 rounded-full pointer-events-none z-[100] shadow-[0_0_10px_red]"
+        style={{ x: smoothX, y: smoothY, translateX: '-50%', translateY: '-50%' }}
+      />
+      <motion.div
+        className="fixed top-0 left-0 w-10 h-10 border border-red-800 rounded-full pointer-events-none z-[99] mix-blend-screen"
+        style={{ x: lagX, y: lagY, translateX: '-50%', translateY: '-50%' }}
+      />
+    </>
+  );
+};
+
+const CreepyEye = ({ mouseX, mouseY, delay = 0 }: { mouseX: any, mouseY: any, delay?: number }) => {
+  const [windowSize, setWindowSize] = useState({ w: 1000, h: 800 });
+  
+  useEffect(() => {
+    setWindowSize({ w: window.innerWidth, h: window.innerHeight });
+  }, []);
+
+  const xMove = useTransform(mouseX, [0, windowSize.w], [-6, 6]);
+  const yMove = useTransform(mouseY, [0, windowSize.h], [-4, 4]);
+  const blink = useSpring(0, { stiffness: 50 });
+
+  useEffect(() => {
+    const blinkInterval = setInterval(() => {
+      if (Math.random() > 0.6) {
+        blink.set(1);
+        setTimeout(() => blink.set(0), 150);
+      }
+    }, 3000 + delay);
+    return () => clearInterval(blinkInterval);
+  }, [blink, delay]);
+
+  const scaleY = useTransform(blink, [0, 1], [1, 0.1]);
+
+  return (
+    <div className="w-12 h-6 rounded-[100%] border border-red-950/40 bg-black/50 shadow-inner flex items-center justify-center overflow-hidden relative">
+      <motion.div style={{ scaleY }} className="absolute inset-0 bg-[#020000] z-10 origin-center" />
+      <motion.div style={{ x: xMove, y: yMove }} className="w-4 h-4 bg-red-800 rounded-full flex items-center justify-center blur-[1px]">
+        <div className="w-1 h-2 bg-black rounded-full" />
+      </motion.div>
+    </div>
+  );
+};
+
+const NavItem = ({ href, text, hiddenText }: { href: string, text: string, hiddenText: string }) => (
+  <a href={href} className="group relative overflow-hidden font-serif text-sm tracking-widest block">
+    <span className="block group-hover:-translate-y-full transition-transform duration-300 text-zinc-500 group-hover:opacity-0 ease-in-out">{text}</span>
+    <span className="absolute top-0 left-0 text-red-500 block translate-y-full group-hover:translate-y-0 transition-transform duration-300 flicker ease-in-out font-bold blur-[0.5px]">{hiddenText}</span>
+  </a>
+);
+
+// --- Sections Data ---
+
+const menuItems = [
+  { name: "Coagulated Blood Wine", price: "$14", desc: "A thick, iron-rich vintage served at room temperature." },
+  { name: "Tears of the Condemned", price: "$9", desc: "Salty, bitter espresso pulled over burning sage." },
+  { name: "Flesh & Bone Capriccio", price: "$22", desc: "Raw wagyu with marrow froth and crushed obsidian salt." },
+  { name: "The Last Breath", price: "$16", desc: "A smoke-infused absinthe that steals your voice." },
+];
+
+export default function App() {
+  const { scrollY } = useScroll();
+  const y1 = useTransform(scrollY, [0, 1000], [0, 300]);
+  const opacityFade = useTransform(scrollY, [0, 400], [1, 0]);
+
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      mouseX.set(e.clientX);
+      mouseY.set(e.clientY);
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [mouseX, mouseY]);
+
+  return (
+    <div className="relative min-h-screen bg-[#020000] overflow-hidden selection:bg-red-950 selection:text-red-500 text-zinc-400 font-sans">
+      
+      {/* Global Overlays */}
+      <div className="fixed inset-0 pointer-events-none z-[60] noise-bg" />
+      <div className="fixed inset-0 pointer-events-none z-[61] scanlines opacity-30" />
+      <div className="fixed inset-0 pointer-events-none z-[62] bg-[radial-gradient(circle_at_center,transparent_0%,rgba(15,0,0,0.9)_100%)]" />
+      
+      {/* Flickering Light Effect */}
+      <motion.div 
+        className="fixed inset-0 pointer-events-none z-[65] bg-red-950/5"
+        animate={{ opacity: [0, 0.05, 0, 0.1, 0.02, 0] }}
+        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+      />
+      {/* Ghostly Elements */}
+      <SpectralWisp delay={0} color="rgba(100, 100, 255, 0.08)" size={300} duration={30} />
+      <SpectralWisp delay={5} color="rgba(255, 0, 0, 0.05)" size={400} duration={45} />
+      <SpectralWisp delay={15} color="rgba(200, 255, 200, 0.06)" size={250} duration={40} />
+      <GhostlyApparition delay={8} />
+      <GhostlyApparition delay={35} />
+      <GhostlyWhisper />
+
+      <CustomCursor mouseX={mouseX} mouseY={mouseY} />
+
+      {/* Header / Nav */}
+      <motion.header 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 2, delay: 1 }}
+        className="fixed top-0 left-0 right-0 p-6 flex justify-between items-center z-[70] border-b border-red-950/30 bg-black/40 backdrop-blur-md"
+      >
+        <div className="flex items-center gap-3 font-scary text-xl text-red-700 tracking-wider">
+          <Droplets size={20} className="blood-drop-shadow" />
+          <span className="hidden sm:inline">L.K.</span>
+        </div>
+        <nav className="flex gap-6 md:gap-10">
+          <NavItem href="#about" text="The Legend" hiddenText="THE LIES" />
+          <NavItem href="#menu" text="Menu" hiddenText="POISON" />
+          <NavItem href="#reservations" text="Reservations" hiddenText="SELL SOUL" />
+          <NavItem href="#visit" text="Visit" hiddenText="DIE HERE" />
+        </nav>
+      </motion.header>
+
+      {/* Hero Section */}
+      <section className="relative min-h-screen flex flex-col items-center justify-center pt-20 pb-12 z-10 px-4">
+        
+        {/* Parallax Creepy Background Elements */}
+        <motion.div style={{ y: y1 }} className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none opacity-20 filter blur-sm">
+           <Skull size={600} className="text-red-950 drop-shadow-[0_0_100px_rgba(255,0,0,0.2)]" />
+        </motion.div>
+
+        <motion.div 
+          style={{ opacity: opacityFade }}
+          initial={{ scale: 1.1, opacity: 0, filter: 'blur(20px)' }}
+          animate={{ scale: 1, opacity: 1, filter: 'blur(0px)' }}
+          transition={{ duration: 2.5, ease: "easeOut" }}
+          className="relative z-10 text-center flex flex-col items-center"
+        >
+          <div className="flex gap-12 items-center mb-8 opacity-40">
+            <CreepyEye mouseX={mouseX} mouseY={mouseY} delay={0} />
+            <CreepyEye mouseX={mouseX} mouseY={mouseY} delay={500} />
+          </div>
+
+          <h1 className="font-scary text-5xl sm:text-7xl md:text-8xl lg:text-9xl mb-2 text-[#9a0000] text-glow-blood heartbeat tracking-tighter leading-tight relative mt-4">
+            The Lost Kitchen
+            <span className="absolute inset-0 text-red-500 opacity-30 mix-blend-screen translate-x-[2px] translate-y-[-2px]">The Lost Kitchen</span>
+          </h1>
+          
+          <div className="h-[2px] w-full max-w-lg bg-gradient-to-r from-transparent via-red-900 to-transparent my-6 opacity-60" />
+          
+          <h2 className="font-serif text-xl md:text-3xl text-red-800 tracking-[0.4em] font-bold uppercase flicker">
+            <GhostlyGlitch text="No Way Out" />
+          </h2>
+        </motion.div>
+
+        {/* Scroll Indicator */}
+        <motion.div 
+          animate={{ height: [0, 40, 0], opacity: [0, 0.8, 0] }}
+          transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 w-[2px] bg-red-600 z-10"
+        />
+      </section>
+
+      {/* Intro / About Section */}
+      <section id="about" className="relative py-40 px-6 z-10 bg-[#010000] border-t border-red-950/20 overflow-hidden">
+        {/* Subtle background apparition */}
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-5">
+           <motion.div 
+             animate={{ opacity: [0, 0.5, 0], scale: [0.8, 1, 0.8] }}
+             transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+             className="absolute -top-20 -left-20"
+           >
+              <Skull size={400} className="text-red-900" />
+           </motion.div>
+        </div>
+
+        <div className="max-w-3xl mx-auto text-center relative">
+          <CircleAlert size={120} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-red-950/10 pointer-events-none rotate-180" />
+          
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 1.5 }}
+          >
+            <h3 className="font-serif text-3xl md:text-5xl text-red-700 mb-10 text-glow-blood uppercase tracking-widest">A Feast for the Damned</h3>
+            <p className="text-lg md:text-2xl text-zinc-500 leading-relaxed font-light mb-8 max-w-2xl mx-auto font-serif italic selection:bg-red-900 selection:text-white">
+              "We built our dining room over the mass graves of 1884. The soil provides our ingredients. 
+              The air provides our ambiance. Do not tap on the glass... they hate being watched."
+            </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Menu Section */}
+      <section id="menu" className="relative py-40 px-6 z-10 min-h-screen flex items-center justify-center bg-black">
+        <div className="max-w-5xl w-full mx-auto relative">
+          
+          <motion.div
+             initial={{ opacity: 0 }}
+             whileInView={{ opacity: 1 }}
+             viewport={{ once: true }}
+             className="text-center mb-24 relative z-10"
+          >
+            <h3 className="font-scary text-5xl md:text-7xl text-red-800 text-glow-intense mb-4">The Slaughter</h3>
+            <p className="text-red-950 tracking-[0.4em] uppercase text-sm font-bold">Eat before you are eaten</p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 gap-x-16 gap-y-16 relative z-10">
+            {menuItems.map((item, index) => (
+              <motion.div 
+                key={index}
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, delay: index * 0.15 }}
+                className="group relative p-6 border-l-2 border-transparent hover:border-red-600 transition-all duration-300 bg-gradient-to-r from-red-950/5 to-transparent"
+              >
+                <div className="flex justify-between items-baseline mb-3 pb-2 border-b border-red-950/30">
+                  <h4 className="font-serif text-xl md:text-2xl text-zinc-300 group-hover:text-red-500 transition-colors duration-300 group-hover:shadow-[0_0_10px_red]">
+                    {item.name}
+                  </h4>
+                  <span className="font-scary text-xl text-red-900 group-hover:text-red-600 transition-colors">{item.price}</span>
+                </div>
+                <p className="text-zinc-500 font-light pr-8 text-sm md:text-base leading-relaxed">{item.desc}</p>
+                <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-all duration-500 -translate-y-4 group-hover:translate-y-0">
+                   <EyeIcon size={16} className="text-red-600 flicker" />
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Reservations Section */}
+      <section id="reservations" className="relative py-40 px-6 z-10 border-t border-red-900/40 shadow-[0_0_80px_rgba(50,0,0,0.3)_inset] bg-[#020000]">
+        <ReservationForm />
+      </section>
+
+      {/* Footer / Visit */}
+      <section id="visit" className="relative py-32 px-6 z-10 bg-[#000000] border-t border-red-950 border-b-[8px] border-b-red-900">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center md:items-start gap-16">
+          
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center md:text-left flex-1"
+          >
+            <div className="flex items-center justify-center md:justify-start gap-4 mb-6">
+              <Skull size={40} className="text-red-900 blood-drop-shadow" />
+              <h3 className="font-scary text-4xl text-red-800 text-glow-blood uppercase">The Lost Kitchen</h3>
+            </div>
+            <p className="text-zinc-600 mb-8 max-w-sm font-serif italic text-lg opacity-80 hover:opacity-100 transition-opacity">
+              We welcome mortals from dusk till dawn. Step into the fog and meet your maker.
+            </p>
+          </motion.div>
+
+          <motion.div 
+             initial={{ opacity: 0, y: 20 }}
+             whileInView={{ opacity: 1, y: 0 }}
+             viewport={{ once: true }}
+             transition={{ delay: 0.2 }}
+             className="grid grid-cols-1 sm:grid-cols-2 gap-12 flex-1"
+          >
+            <div className="space-y-4">
+               <h4 className="font-serif text-xl border-b border-red-950 pb-3 text-red-600 flex items-center gap-2 uppercase tracking-widest text-sm">
+                 <MapPin size={16} /> The Crypt
+               </h4>
+               <p className="text-zinc-500 font-light leading-relaxed">
+                 13 Elm Street Hollow<br />
+                 Salem, MA 01970<br />
+                 <span className="text-red-900 italic font-serif">Blood trails mark the entrance.</span>
+               </p>
+            </div>
+            <div className="space-y-4">
+               <h4 className="font-serif text-xl border-b border-red-950 pb-3 text-red-600 flex items-center gap-2 uppercase tracking-widest text-sm">
+                 <Clock size={16} /> Survival Hours
+               </h4>
+               <ul className="text-zinc-500 font-light space-y-2">
+                 <li>Mon-Thu: 6pm - 2am</li>
+                 <li>Fri-Sat: 8pm - 4am</li>
+                 <li className="text-red-950 line-through">Sunday: Closed</li>
+                 <li className="text-red-700 text-sm italic font-serif">Sunday: The Hunt Ends</li>
+               </ul>
+            </div>
+          </motion.div>
+        </div>
+
+        <div className="mt-32 text-center text-red-950 text-xs tracking-[0.2em] uppercase">
+           © {new Date().getFullYear()} The Lost Kitchen. Do not look behind you.
+        </div>
+      </section>
+
+    </div>
+  );
+}

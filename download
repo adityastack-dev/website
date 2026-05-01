@@ -1,0 +1,245 @@
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Calendar, Clock, Skull, Droplets, ArrowRight } from 'lucide-react';
+
+const THEMES = [
+  { id: 'abattoir', name: 'The Abattoir', desc: 'Rusty hooks, drained blood, and the smell of iron.' },
+  { id: 'sensory', name: 'Sensory Deprivation', desc: 'Pitch black. You eat what we feed you. No questions.' },
+  { id: 'asylum', name: 'The Abandoned Asylum', desc: 'Strapped to your chair under flickering fluorescent tubes.' },
+  { id: 'sacrificial', name: 'The Sacrificial Altar', desc: 'Dine from the carved stone where the ancient ones fed.' }
+];
+
+export default function ReservationForm() {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    date: '',
+    time: '',
+    guests: '2',
+    theme: THEMES[0].id
+  });
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    try {
+      const response = await fetch('/api/reservations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      
+      if (response.ok) {
+        setIsSuccess(true);
+        setFormData({ name: '', email: '', date: '', time: '', guests: '2', theme: THEMES[0].id });
+      }
+    } catch (error) {
+      console.error('Failed to book reservation:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  return (
+    <div className="w-full max-w-4xl mx-auto text-zinc-300">
+      <div className="bg-[#000000] border border-red-950 p-8 md:p-14 relative overflow-hidden group">
+        
+        {/* Subtle hover bloody overlay */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(50,0,0,0.1)_0%,transparent_100%)] opacity-0 group-hover:opacity-100 transition-opacity duration-1000 blur-xl pointer-events-none" />
+        
+        {/* Ethereal background pulses */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+           <motion.div 
+             animate={{ 
+               scale: [1, 1.2, 1],
+               opacity: [0.05, 0.1, 0.05],
+               x: [0, 50, 0],
+               y: [0, -30, 0]
+             }}
+             transition={{ duration: 15, repeat: Infinity }}
+             className="absolute -top-20 -right-20 w-64 h-64 bg-blue-900/10 blur-[80px] rounded-full"
+           />
+           <motion.div 
+             animate={{ 
+               scale: [1, 1.5, 1],
+               opacity: [0.03, 0.08, 0.03],
+               x: [0, -60, 0],
+               y: [0, 40, 0]
+             }}
+             transition={{ duration: 20, repeat: Infinity, delay: 5 }}
+             className="absolute -bottom-20 -left-20 w-80 h-80 bg-red-900/10 blur-[100px] rounded-full"
+           />
+        </div>
+
+        <div className="text-center mb-16 relative z-10">
+          <h3 className="font-scary text-3xl md:text-5xl text-red-700 text-glow-blood mb-6 tracking-wide">Seal Your Fate</h3>
+          <p className="text-zinc-600 font-serif italic max-w-lg mx-auto text-lg border-b border-red-950 pb-6 inline-block">
+            Sign the ledger. Your soul is the deposit.
+          </p>
+        </div>
+
+        <AnimatePresence mode="wait">
+          {isSuccess ? (
+            <motion.div 
+              key="success"
+              initial={{ opacity: 0, filter: 'blur(10px)' }}
+              animate={{ opacity: 1, filter: 'blur(0px)' }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 1 }}
+              className="flex flex-col items-center justify-center py-20 text-center"
+            >
+              <div className="w-32 h-32 mb-8 relative flex items-center justify-center">
+                <div className="absolute inset-0 border-4 border-red-900 rounded-full animate-[ping_3s_infinite]" />
+                <Droplets size={60} className="text-red-600 blood-drop-shadow relative z-10" />
+              </div>
+              <h4 className="font-scary text-3xl md:text-5xl text-red-600 mb-6 text-glow-blood">Pact Sealed</h4>
+              <p className="text-red-900/80 mb-10 max-w-md font-serif text-xl italic">
+                We know who you are. We know when to expect you. Do not disappoint us.
+              </p>
+              <button 
+                onClick={() => setIsSuccess(false)}
+                className="px-6 py-2 text-sm uppercase tracking-[0.3em] font-bold text-zinc-500 hover:text-red-500 transition-colors border-b border-transparent hover:border-red-500"
+              >
+                Sign Another Soul Away
+              </button>
+            </motion.div>
+          ) : (
+            <motion.form 
+              key="form"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              onSubmit={handleSubmit} 
+              className="space-y-12 relative z-10"
+            >
+              <div className="grid md:grid-cols-2 gap-x-12 gap-y-10">
+                {/* Personal Info */}
+                <div className="space-y-10">
+                  <div className="relative">
+                    <label className="block text-xs uppercase tracking-[0.2em] text-red-900 mb-2 font-bold font-sans">Victim Identity</label>
+                    <input 
+                      required 
+                      type="text" 
+                      name="name" 
+                      value={formData.name} 
+                      onChange={handleChange}
+                      className="w-full bg-transparent border-b-2 border-red-950 pb-2 text-red-500 font-serif text-xl focus:border-red-600 focus:shadow-[0_10px_15px_-10px_rgba(255,0,0,0.5)] outline-none transition-all placeholder:text-red-950"
+                      placeholder="e.g. John Doe"
+                    />
+                  </div>
+                  <div className="relative">
+                    <label className="block text-xs uppercase tracking-[0.2em] text-red-900 mb-2 font-bold font-sans">Bloodline (Email)</label>
+                    <input 
+                      required 
+                      type="email" 
+                      name="email" 
+                      value={formData.email} 
+                      onChange={handleChange}
+                      className="w-full bg-transparent border-b-2 border-red-950 pb-2 text-red-500 font-serif text-xl focus:border-red-600 focus:shadow-[0_10px_15px_-10px_rgba(255,0,0,0.5)] outline-none transition-all placeholder:text-red-950"
+                      placeholder="sacrafice@example.com"
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-8">
+                    <div className="relative">
+                      <label className="flex gap-2 items-center text-xs uppercase tracking-[0.2em] text-red-900 mb-2 font-bold font-sans">
+                        <Calendar size={14} /> Date of Demise
+                      </label>
+                      <input 
+                        required 
+                        type="date" 
+                        name="date" 
+                        value={formData.date} 
+                        onChange={handleChange}
+                        className="w-full bg-transparent border-b-2 border-red-950 pb-2 text-red-500 font-serif focus:border-red-600 focus:shadow-[0_10px_15px_-10px_rgba(255,0,0,0.5)] outline-none transition-all [color-scheme:dark]"
+                      />
+                    </div>
+                    <div className="relative">
+                      <label className="flex gap-2 items-center text-xs uppercase tracking-[0.2em] text-red-900 mb-2 font-bold font-sans">
+                        <Clock size={14} /> Final Hour
+                      </label>
+                      <input 
+                        required 
+                        type="time" 
+                        name="time" 
+                        value={formData.time} 
+                        onChange={handleChange}
+                        className="w-full bg-transparent border-b-2 border-red-950 pb-2 text-red-500 font-serif focus:border-red-600 focus:shadow-[0_10px_15px_-10px_rgba(255,0,0,0.5)] outline-none transition-all [color-scheme:dark]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="relative">
+                    <label className="block text-xs uppercase tracking-[0.2em] text-red-900 mb-2 font-bold font-sans">
+                      Body Count
+                    </label>
+                    <select 
+                      name="guests" 
+                      value={formData.guests} 
+                      onChange={handleChange}
+                      className="w-full bg-black border-b-2 border-red-950 pb-2 text-red-500 font-serif text-xl focus:border-red-600 focus:shadow-[0_10px_15px_-10px_rgba(255,0,0,0.5)] outline-none transition-all appearance-none cursor-pointer"
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8].map(num => (
+                        <option key={num} value={num}>{num} {num === 1 ? 'Corpse' : 'Corpses'}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Theme Selection - Visceral Design */}
+                <div>
+                  <label className="block text-xs uppercase tracking-[0.2em] text-red-900 mb-6 font-bold font-sans border-b border-red-950 pb-2">
+                    Method of Execution (Theme)
+                  </label>
+                  <div className="space-y-4">
+                    {THEMES.map((theme) => (
+                      <div 
+                        key={theme.id}
+                        onClick={() => setFormData(prev => ({ ...prev, theme: theme.id }))}
+                        className={`p-4 relative cursor-pointer overflow-hidden group/theme border ${
+                          formData.theme === theme.id 
+                            ? 'border-red-800 bg-[#0a0000]' 
+                            : 'border-transparent hover:border-red-950 bg-black'
+                        }`}
+                      >
+                        {formData.theme === theme.id && (
+                          <motion.div layoutId="active-theme" className="absolute left-0 top-0 bottom-0 w-1 bg-red-600 shadow-[0_0_10px_red]" />
+                        )}
+                        <h5 className={`font-serif text-xl mb-2 flex items-center justify-between ${formData.theme === theme.id ? 'text-red-500' : 'text-zinc-500 group-hover/theme:text-red-800 transition-colors'}`}>
+                          {theme.name}
+                          {formData.theme === theme.id && <Skull size={18} className="text-red-600" />}
+                        </h5>
+                        <p className={`text-sm font-light ${formData.theme === theme.id ? 'text-red-900/80' : 'text-zinc-700'}`}>
+                          {theme.desc}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-12 text-center">
+                <button 
+                  disabled={isSubmitting}
+                  type="submit" 
+                  className="shake px-16 py-5 bg-[#050000] border border-red-900 text-red-600 hover:text-red-400 hover:border-red-500 hover:bg-[#110000] transition-colors uppercase tracking-[0.3em] font-sans font-black disabled:opacity-50 inline-flex items-center gap-4 text-xs group"
+                >
+                  {isSubmitting ? 'Draining...' : 'Submit to the Void'}
+                  {!isSubmitting && <ArrowRight size={16} className="text-red-900 group-hover:text-red-500 transition-colors" />}
+                </button>
+              </div>
+            </motion.form>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
